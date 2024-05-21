@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { loginUser, logoutUser, refreshAccessToken, registerUser } from '../controllers/user.controller.js';
+import { changePassword, getCurrentUser, loginUser, logoutUser, refreshAccessToken, registerUser } from '../controllers/user.controller.js';
 import { upload } from '../middlewares/multer.middleware.js';
 import { verifyJwt } from '../middlewares/auth.middleware.js';
 
@@ -17,8 +17,10 @@ router.route("/register").post(
 router.route("/login").post(loginUser);
 
 // this route is using verifyJwt middleware
-router.route("/logout").post( verifyJwt , logoutUser)
-router.route("/refresh-token").post(refreshAccessToken)
+router.route("/logout").post( verifyJwt , logoutUser);
+router.route("/refresh-token").post(refreshAccessToken);
+router.route("/change-password").post(verifyJwt,changePassword);
+router.route("/getCurrentUser").post(verifyJwt,getCurrentUser); 
 
 
 export default router;
