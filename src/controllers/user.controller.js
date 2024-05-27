@@ -248,7 +248,8 @@ export const changePassword = asyncHandler(async (req, res) => {
      }
      const user = await User.findById(req.user._id);
 
-     const isValidPassword = await user.isValidPassword(oldPassword);
+
+     const isValidPassword = await user.isPasswordValid(oldPassword);
 
      if (!isValidPassword) {
           throw new ApiError(400, "Invalid  old Password")
@@ -373,20 +374,21 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
                     },
                     isSubscribed: {
                          $cond: {
-                              if: { $in: [req.user?._id, "$subscribers.subscriber"] }
-                         },
-                         $then: true,
-                         $else: false
-                    }
+                             if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+                             then: true,
+                             else: false
+                         }
+                     }
+                     
                }
           },
           {
                $project:{
                     fullname:1,
                     username:1,
-                    subscribersCount,
-                    channelsSubscribedToCount,
-                    isSubscribed,
+                    subscribersCount:1,
+                    channelsSubscribedToCount:1,
+                    isSubscribed :1,
                     avatar:1,
                     coverImage:1
 
@@ -408,52 +410,62 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
      )
 })
 
-export const getWatchHistory = asyncHandler( async (req , res) => {
-     const user = User.aggregate([
-          {
-               $match:{
-                    _id : new mongoose.Types.ObjectId(req.user._id)
-               }
-          },
-          {
-               $lookup:{
-                    from:'videos',
-                    localField:'watchHistory',
-                    foreignField:'_id',
-                    as:'watchHistory',
-                    pipeline:[
-                         {
-                              $lookup:{
-                                   from:'users',
-                                   localField:'owner',
-                                   foreignField:'_id',
-                                   as:'owner',
-                                   pipeline:[
-                                        {
-                                             $project:{
-                                                  fullname:1,
-                                                  username:1,
-                                                  avatar:1
-                                             }
-                                        }
-                                   ]
-                              }
-                         },
-                         {
-                              $addFields:{
-                                   owner:{
-                                        $first :'$owner'
-                                   }
-                              }
+export const getWatchHistory = asyncHandler(async (req, res) => {
+     const userId = req.user?._id;
+ 
+     if (!userId) {
+         throw new ApiError(400, "User ID is missing");
+     }
+ 
+     const user = await User.aggregate([
+         {
+             $match: {
+                 _id: new mongoose.Types.ObjectId(userId)
+             }
+         },
+         {
+             $lookup: {
+                 from: 'videos',
+                 localField: 'watchHistory',
+                 foreignField: '_id',
+                 as: 'watchHistory',
+                 pipeline: [
+                     {
+                         $lookup: {
+                             from: 'users',
+                             localField: 'owner',
+                             foreignField: '_id',
+                             as: 'owner',
+                             pipeline: [
+                                 {
+                                     $project: {
+                                         fullname: 1,
+                                         username: 1,
+                                         avatar: 1
+                                     }
+                                 }
+                             ]
                          }
-                    ]
-               }
-          }
-     ])
-
+                     },
+                     {
+                         $addFields: {
+                             owner: {
+                                 $first: '$owner'
+                             }
+                         }
+                     }
+                 ]
+             }
+         }
+     ]);
+ 
+     if (!user.length) {
+         throw new ApiError(404, "User not found");
+     }
+ 
      return res
-     .status(200)
-     .json(
-          new ApiResponse(200 , user[0].watchHistory, "watchHistory fetched successfully")
-     )
-})
+         .status(200)
+         .json(
+             new ApiResponse(200, user[0].watchHistory, "Watch history fetched successfully")
+         );
+ });

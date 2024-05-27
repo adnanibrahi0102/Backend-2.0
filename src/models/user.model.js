@@ -43,7 +43,7 @@ const userSchema = new Schema(
             type: String,
             required: [true, "password is required"],
             minlength: [6, "password must be at least 6 characters"],
-            select: false
+            // select: false //it was showing this.password is undefined so compare function did'nt work
         },
         refreshToken: {
             type: String,
