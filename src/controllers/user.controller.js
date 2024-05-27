@@ -168,11 +168,11 @@ export const logoutUser = asyncHandler(async (req, res) => {
           req.user._id,
           {
                $set: {
-                    refreshToken: null
+                    refreshToken: null  //we can also use $unset and pass a flag 1
                }
           },
           {
-               new: true,
+               new: true, 
 
           },
 
