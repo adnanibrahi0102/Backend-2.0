@@ -4,6 +4,7 @@ import { User } from '../models/user.model.js'
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import jwt from 'jsonwebtoken'
+import mongoose from 'mongoose';
 
 const generateAccessAndRefreshToken = async (userId) => {
      try {
@@ -291,39 +292,168 @@ export const updateAvatar = asyncHandler(async (req, res) => {
           },
           { new: true }
      ).select("-password");
+     // TODO: DELETE AVATAR FROM CLOUDINARY
 
      res.
           status(200)
           .json(
-               new ApiResponse(200,user,"Avatar updated successfully")
+               new ApiResponse(200, user, "Avatar updated successfully")
 
           )
 
 })
 
-export const updateCoverImage = asyncHandler(async (req,res)=>{
+export const updateCoverImage = asyncHandler(async (req, res) => {
 
-     const coverImageLocalPath =req.file?.url;
-     if(!coverImageLocalPath){
-          throw new ApiError(400,"Cover Image file is missing");
+     const coverImageLocalPath = req.file?.url;
+     if (!coverImageLocalPath) {
+          throw new ApiError(400, "Cover Image file is missing");
      }
-      const coverImage = await uploadOnCloudinary(coverImageLocalPath);
-      if(!coverImage.url){
-           throw new ApiError(500," update Cover Image upload failed");
-      }
+     const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+     if (!coverImage.url) {
+          throw new ApiError(500, " update Cover Image upload failed");
+     }
 
-      const user = await User.findByIdAndUpdate(
+     const user = await User.findByIdAndUpdate(
           req.user._id,
           {
-               $set:{
-                    coverImage:coverImage.url
+               $set: {
+                    coverImage: coverImage.url
                }
           },
-          {new:true}
-      )
-      res
-      .status(200)
-      .json(
-          new ApiResponse(200,user,"Cover Image updated successfully")
-      )
+          { new: true }
+     )
+     res
+          .status(200)
+          .json(
+               new ApiResponse(200, user, "Cover Image updated successfully")
+          )
+})
+
+// *********Aggregation Pipeline's********* //
+
+export const getUserChannelProfile = asyncHandler(async (req, res) => {
+     // getting username from url
+     const { username } = req.params;
+
+     if (!username?.trim()) {
+          throw new ApiError(400, "username is missing")
+     }
+
+     const channel = await User.aggregate([
+          {
+               $match: {
+                    username: username.toLowerCase(),
+               }
+          },
+          {
+               $lookup: {
+                    from: "subscriptions",
+                    localField: "_id",
+                    foreignField: "channel",
+                    as: "subscribers"
+               }
+          },
+          {
+               $lookup: {
+                    from: "subscriptions",
+                    localField: "_id",
+                    foreignField: "subscriber",
+                    as: "subscribedTo"
+               }
+          },
+          {
+               $addFields: {
+                    subscribersCount: {
+                         $size: "$subscribers"
+                    }
+                    ,
+                    channelsSubscribedToCount: {
+                         $size: "$subscribedTo"
+                    },
+                    isSubscribed: {
+                         $cond: {
+                              if: { $in: [req.user?._id, "$subscribers.subscriber"] }
+                         },
+                         $then: true,
+                         $else: false
+                    }
+               }
+          },
+          {
+               $project:{
+                    fullname:1,
+                    username:1,
+                    subscribersCount,
+                    channelsSubscribedToCount,
+                    isSubscribed,
+                    avatar:1,
+                    coverImage:1
+
+               }
+          }
+
+
+     ]);
+
+     console.log("channel: " + channel);
+     if (!channel?.length) {
+          throw new ApiError(404, "channel does'nt exist")
+     }
+
+     return res
+     .status(200)
+     .json(
+          new ApiResponse(200, channel[0], "channel profile fetched successfully")
+     )
+})
+
+export const getWatchHistory = asyncHandler( async (req , res) => {
+     const user = User.aggregate([
+          {
+               $match:{
+                    _id : new mongoose.Types.ObjectId(req.user._id)
+               }
+          },
+          {
+               $lookup:{
+                    from:'videos',
+                    localField:'watchHistory',
+                    foreignField:'_id',
+                    as:'watchHistory',
+                    pipeline:[
+                         {
+                              $lookup:{
+                                   from:'users',
+                                   localField:'owner',
+                                   foreignField:'_id',
+                                   as:'owner',
+                                   pipeline:[
+                                        {
+                                             $project:{
+                                                  fullname:1,
+                                                  username:1,
+                                                  avatar:1
+                                             }
+                                        }
+                                   ]
+                              }
+                         },
+                         {
+                              $addFields:{
+                                   owner:{
+                                        $first :'$owner'
+                                   }
+                              }
+                         }
+                    ]
+               }
+          }
+     ])
+
+     return res
+     .status(200)
+     .json(
+          new ApiResponse(200 , user[0].watchHistory, "watchHistory fetched successfully")
+     )
 })
