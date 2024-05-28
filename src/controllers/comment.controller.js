@@ -12,6 +12,9 @@ export const getVideoComments =asyncHandler(async(req,res)=>{
 
 export const addComment = asyncHandler( async (req,res )=>{
     // Add a comment to the video
+    //video id from req.params
+    //Comment content and user information from req.body
+    
 });
 
 export const updateComment = asyncHandler(async (req, res) => {
