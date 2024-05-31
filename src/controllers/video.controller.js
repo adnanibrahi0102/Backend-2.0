@@ -96,6 +96,14 @@ export const getVideoById = asyncHandler(async (req, res) => {
       }
     },
     {
+      $lookup:{
+        from:"comments",
+        localField:'_id',
+        foreignField:"video",
+        as :"comments"
+      }
+    },
+    {
       // Perform a lookup to retrieve owner details
       $lookup: {
         from: "users", // Look up the 'users' collection
@@ -143,7 +151,8 @@ export const getVideoById = asyncHandler(async (req, res) => {
       // Add fields for likes count and owner details
       $addFields: {
         likesCount: { $size: "$likes" }, // Calculate the count of likes
-        owner: "$owner" // Assign the 'owner' array as the 'owner' field
+        owner: "$owner" ,// Assign the 'owner' array as the 'owner' field
+        commentsCount: { $size: "$comments" } // Calculate the count of comments
       }
     },
     {
@@ -157,7 +166,9 @@ export const getVideoById = asyncHandler(async (req, res) => {
         duration: 1, // Include the 'duration' field
         comments: 1, // Include the 'comments' field
         owner: 1, // Include the 'owner' field
-        likesCount: 1 // Include the 'likesCount' field
+        likesCount: 1, // Include the 'likesCount' field
+        commentsCount: 1 // Include the 'commentsCount' field
+
       }
     }
   ]).exec(); // Execute the aggregation pipeline
@@ -187,10 +198,6 @@ export const getVideoById = asyncHandler(async (req, res) => {
   // Return the response with fetched video details
   return res.status(200).json(new ApiResponse(200, video[0], "video details fetched successfully"));
 });
-
-
-
-
 
 
 export const deleteVideo = asyncHandler(async (req, res) => {
