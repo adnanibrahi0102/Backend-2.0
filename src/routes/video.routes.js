@@ -2,7 +2,7 @@ import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware.js";
 import { deleteVideo, getVideoById, publishVideo, updateVideoDetails } from "../controllers/video.controller.js";
 import { verifyJwt } from "../middlewares/auth.middleware.js";
-import { addComment, deleteComment } from "../controllers/comment.controller.js";
+import { addComment, deleteComment, getVideoComments, updateComment } from "../controllers/comment.controller.js";
 
 const router = Router();
 
@@ -24,8 +24,12 @@ router.route("/update-video/:id").patch(verifyJwt , upload.single("thumbnail"),u
 
 //comment routes
 
-router.route("/post-comment/:id").post(verifyJwt , addComment)
+router.route("/post-comment/:id").post(verifyJwt , addComment);
 
-router.route("/delete-comment/:commentId").delete(verifyJwt , deleteComment)
+router.route("/delete-comment/:commentId").delete(verifyJwt , deleteComment);
+
+router.route("/update-comment/:commentId").patch(verifyJwt , updateComment);
+
+router.route("/get-comments/:videoId").get(verifyJwt , getVideoComments)
 
 export default router;
