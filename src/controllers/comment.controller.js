@@ -21,42 +21,34 @@ export const getVideoComments =asyncHandler(async(req,res)=>{
 
      const getComments = await Comment.aggregate([
         {
-            $match:{
-                video :new mongoose.Types.ObjectId(videoId)
+            $match: {
+                video: new mongoose.Types.ObjectId(videoId)
             }
         },
         {
-            $lookup:{
-                from:"users",
-                localField:"owner",
-                foreignField:"_id",
-                as:"owner"
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner"
             }
         },
-          {
+        {
             $unwind: '$owner',
-          },
-        {
-            $addFields:{
-                owner:{
-                    $first:"$owner"
-                }
-            }
         },
         {
-            $project:{
-                content:1,
-                createdAt:1,
-                owner:{
-                    fullname:1,
-                    username:1,
-                    avatar:1
+            $project: {
+                content: 1,
+                createdAt: 1,
+                owner: {
+                    fullname: 1,
+                    username: 1,
+                    avatar: 1
                 }
             }
         }
-
-        
-     ]).exec()
+    ]).exec();
+    
   
      if(!getComments){
          throw new ApiError(500, "failed to fetch comments")
