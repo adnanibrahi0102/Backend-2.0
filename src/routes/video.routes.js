@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware.js";
-import { deleteVideo, getVideoById, publishVideo, updateVideoDetails } from "../controllers/video.controller.js";
+import { deleteVideo, getAllVideos, getVideoById, publishVideo, updateVideoDetails } from "../controllers/video.controller.js";
 import { verifyJwt } from "../middlewares/auth.middleware.js";
 import { addComment, deleteComment, getVideoComments, updateComment } from "../controllers/comment.controller.js";
 
@@ -20,6 +20,7 @@ router.route("/delete-video/:id").delete(verifyJwt , deleteVideo);
 
 router.route("/update-video/:id").patch(verifyJwt , upload.single("thumbnail"),updateVideoDetails);
 
+router.route("/getAll-videos-of-user").get(verifyJwt , getAllVideos)
 
 
 //comment routes
