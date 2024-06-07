@@ -30,10 +30,8 @@ app.use('/api/v1/users',userRouter);
 app.use('/api/v1/videos',videoRouter);
 
 /* Tweet Route */
-
 app.use("/api/v1/tweets",tweeRouter);
 
 /* likes route */
-
 app.use("/api/v1/likes",likeRouter)
 export {app}; 
