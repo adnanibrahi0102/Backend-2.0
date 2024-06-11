@@ -87,4 +87,75 @@ export const getUserPlayLists = asyncHandler(async (req , res)=>{
      .json(
          new ApiResponse(200, playLists, "playlists fetched successfully")
      )
+});
+
+export const deletePlayList = asyncHandler(async (req, res)=>{
+    const {playListId} = req.params;
+
+    if(!playListId){
+        throw new ApiError(400, "playListId is required")
+    }
+
+    if(!isValidObjectId(playListId)){
+        throw new ApiError(400, "playListId is not valid")
+    }
+
+    const playList = await PlayList.findById(playListId);
+
+    if(playList.owner.toString()!== req.user?._id.toString()){
+        throw new ApiError(401, "You are not authorized to delete this playlist")
+    }
+
+    const deletePlayList = await PlayList.findByIdAndDelete(playListId);
+
+    if(!deletePlayList){
+        throw new ApiError(400, "PlayList could not be deleted")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, {}, "PlayList deleted successfully")
+    )
+});
+
+export const updatePlayList = asyncHandler(async(req,res)=>{
+    const {playListId} = req.params;
+    const {name, description} = req.body;
+
+    if(!(name || description)){
+        throw new ApiError(400, "name and description are required")
+    }
+    if(!playListId){
+        throw new ApiError(400, "playListId is required")
+    }
+
+    if(!isValidObjectId(playListId)){
+        throw new ApiError(400, "playListId is not valid")
+    }
+
+    const playList = await PlayList.findById(playListId);
+    if(playList.owner.toString()!== req.user?._id.toString()){
+        throw new ApiError(401, "You are not authorized to update this playlist")
+    }
+    const updatedPlayList = await PlayList.findByIdAndUpdate(
+        playListId,
+        {
+            $set:{
+                name:name,
+                description:description
+            }
+        },
+        {new:true}
+    )
+
+    if(!updatePlayList){
+        throw new ApiError(400, "PlayList could not be updated")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, updatedPlayList, "PlayList updated successfully")
+    )
 })
