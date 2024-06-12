@@ -158,4 +158,8 @@ export const updatePlayList = asyncHandler(async(req,res)=>{
     .json(
         new ApiResponse(200, updatedPlayList, "PlayList updated successfully")
     )
+});
+
+export const addVideoToPlayList = asyncHandler(async(req , res)=>{
+    
 })
