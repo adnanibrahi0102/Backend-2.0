@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import {ApiError} from '../utils/apiError.js'
 import {ApiResponse} from '../utils/apiResponse.js'
 import mongoose, { isValidObjectId } from 'mongoose';
+import { Video } from "../models/video.model.js";
 
 
 
@@ -161,5 +162,43 @@ export const updatePlayList = asyncHandler(async(req,res)=>{
 });
 
 export const addVideoToPlayList = asyncHandler(async(req , res)=>{
-    
-})
+    const {playListId , videoId} = req.params;
+
+    if(!(playListId && videoId)){
+        throw new ApiError(400, "playListId and videoId are required")
+    }
+
+    if(!(isValidObjectId(playListId) && isValidObjectId(videoId)) ){
+        throw new ApiError(400, "playListId and videoId are not valid")
+    }
+
+    const playList = await PlayList.findById(playListId);
+    const video = await Video.findById(videoId);
+
+    if (
+        (playList.owner?.toString() || video.owner?.toString()) !==
+        req.user?._id?.toString()
+      ){
+        throw new ApiError(401, "You are not authorized to add this video to this playlist")
+      }
+
+    const updatedPlayList = await PlayList.findByIdAndUpdate(
+        playListId,
+        {
+            $push:{
+                videos:videoId
+            }
+        },
+        {new:true}
+    );
+
+    if(!updatePlayList){
+        throw new ApiError(400, "PlayList could not be updated")
+    }
+
+    return res 
+    .status(200)
+    .json(
+        new ApiResponse(200, updatedPlayList, "video added to playlist successfully")
+    )
+});
