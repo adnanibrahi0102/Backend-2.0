@@ -202,3 +202,54 @@ export const addVideoToPlayList = asyncHandler(async(req , res)=>{
         new ApiResponse(200, updatedPlayList, "video added to playlist successfully")
     )
 });
+
+export const removeVideoFromPlaylist = asyncHandler(async(req,res)=>{
+    const {playListId , videoId} = req.params;
+
+    if(!(playListId && videoId)){
+        throw new ApiError(400, "playListId and videoId are required")
+    }
+
+    if(!(isValidObjectId(playListId) && isValidObjectId(videoId)) ){
+        throw new ApiError(400, "playListId and videoId are not valid")
+    }
+
+    const playList = await PlayList.findById(playListId);
+    const video = await Video.findById(videoId);
+
+    if(!playList){
+        throw new ApiError(404, "PlayList not found")
+    }
+    if(!video){
+        throw new ApiError(404, "video not found")
+    }
+
+    if (
+        (playList.owner?.toString() && video.owner?.toString())!==
+        req.user?._id?.toString()
+      ){
+        throw new ApiError(401, "You are not authorized to remove this video from this playlist")
+      }
+    
+    const updatedPlayList = await PlayList.findByIdAndDelete(
+        playList,
+        {
+            $pull:{
+                videos:videoId
+            }
+
+        },
+        {new:true}
+    )
+
+    if(!updatePlayList){
+        throw new ApiError(400, "PlayList could not be updated")
+    }
+
+    return res
+   .status(200)
+   .json(
+        new ApiResponse(200, updatedPlayList, "video removed from playlist successfully")
+    )
+    
+})
