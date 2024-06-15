@@ -204,6 +204,7 @@ export const addVideoToPlayList = asyncHandler(async(req , res)=>{
 });
 
 export const removeVideoFromPlaylist = asyncHandler(async(req,res)=>{
+
     const {playListId , videoId} = req.params;
 
     if(!(playListId && videoId)){
@@ -252,4 +253,4 @@ export const removeVideoFromPlaylist = asyncHandler(async(req,res)=>{
         new ApiResponse(200, updatedPlayList, "video removed from playlist successfully")
     )
     
-})
+});
