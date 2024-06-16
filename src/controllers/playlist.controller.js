@@ -254,3 +254,5 @@ export const removeVideoFromPlaylist = asyncHandler(async(req,res)=>{
     )
     
 });
+
+export const getUserPlayListByID = asyncHandler(async (req ,res)=>{});
